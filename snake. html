@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snake Mobile Pro</title>
+    <style>
+        /* Estilos para evitar comportamentos estranhos no celular */
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Impede selecionar texto ao clicar */
+            -webkit-tap-highlight-color: transparent; /* Remove o quadrado azul ao tocar */
+        }
+
+        body { 
+            background: #4a752c; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            height: 100vh;
+            overflow: hidden; /* Impede scroll na tela */
+            touch-action: none; /* Bloqueia gestos nativos do navegador */
+        }
+
+        #score { 
+            color: white; 
+            font-size: 28px; 
+            font-weight: bold;
+            margin-bottom: 10px; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        canvas { 
+            background: #aad751; 
+            border: 5px solid #578a34; 
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            max-width: 90vw;
+            max-height: 40vh;
+        }
+
+        .controls { 
+            display: grid; 
+            grid-template-columns: repeat(3, 80px); 
+            grid-template-rows: repeat(2, 80px); 
+            gap: 15px; 
+            margin-top: 30px; 
+        }
+
+        button { 
+            width: 80px; 
+            height: 80px; 
+            background: #578a34; 
+            color: white; 
+            border: none; 
+            border-radius: 50%; /* Botões circulares ficam melhores no touch */
+            font-size: 30px; 
+            box-shadow: 0 5px 0 #3e6325;
+            transition: all 0.1s;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #3e6325;
+            background: #6ba341;
+        }
+
+        .up { grid-column: 2; }
+        .left { grid-column: 1; grid-row: 2; }
+        .down { grid-column: 2; grid-row: 2; }
+        .right { grid-column: 3; grid-row: 2; }
+    </style>
+</head>
+<body>
+    <div id="score">Maçãs: 0</div>
+    <canvas id="snake" width="300" height="300"></canvas>
+
+    <div class="controls">
+        <button class="up" ontouchstart="setDir('UP')" onmousedown="setDir('UP')">↑</button>
+        <button class="left" ontouchstart="setDir('LEFT')" onmousedown="setDir('LEFT')">←</button>
+        <button class="down" ontouchstart="setDir('DOWN')" onmousedown="setDir('DOWN')">↓</button>
+        <button class="right" ontouchstart="setDir('RIGHT')" onmousedown="setDir('RIGHT')">→</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("snake");
+        const ctx = canvas.getContext("2d");
+        const box = 20;
+        let score = 0;
+        let snake = [{x: 8 * box, y: 8 * box}];
+        let food = { 
+            x: Math.floor(Math.random()*14+1)*box, 
+            y: Math.floor(Math.random()*14+1)*box 
+        };
+        let d;
+
+        // Função de direção com prevenção de travamento
+        function setDir(dir) {
+            if(dir == "LEFT" && d != "RIGHT") d = "LEFT";
+            else if(dir == "UP" && d != "DOWN") d = "UP";
+            else if(dir == "RIGHT" && d != "LEFT") d = "RIGHT";
+            else if(dir == "DOWN" && d != "UP") d = "DOWN";
+        }
+
+        function draw() {
+            ctx.fillStyle = "#aad751";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar Cobra
+            for(let i=0; i<snake.length; i++) {
+                ctx.fillStyle = (i==0) ? "#4e7cf6" : "#4568db";
+                ctx.strokeStyle = "#3656b5";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            // Desenhar Maçã
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath();
+            ctx.arc(food.x + box/2, food.y + box/2, box/2, 0, Math.PI*2);
+            ctx.fill();
+
+            let snakeX = snake[0].x;
+            let snakeY = snake[0].y;
+
+            if(d == "LEFT") snakeX -= box;
+            if(d == "UP") snakeY -= box;
+            if(d == "RIGHT") snakeX += box;
+            if(d == "DOWN") snakeY += box;
+
+            // Comer maçã
+            if(snakeX == food.x && snakeY == food.y) {
+                score++;
+                document.getElementById("score").innerHTML = "Maçãs: " + score;
+                food = { 
+                    x: Math.floor(Math.random()*14+1)*box, 
+                    y: Math.floor(Math.random()*14+1)*box 
+                };
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: snakeX, y: snakeY };
+
+            // Game Over
+            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(game);
+                alert("Fim de Jogo! Pontos: " + score);
+                location.reload();
+            }
+
+            snake.unshift(newHead);
+        }
+
+        function collision(head, array) {
+            for(let i=0; i<array.length; i++) {
+                if(head.x == array[i].x && head.y == array[i].y) return true;
+            }
+            return false;
+        }
+
+        let game = setInterval(draw, 150);
+    </script>
+</body>
+</html>
